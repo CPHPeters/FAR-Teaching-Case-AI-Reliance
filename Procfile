@@ -1,1 +1,1 @@
-web: otree prodserver 8000
+web: otree prodserver $PORT
