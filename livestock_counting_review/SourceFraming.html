@@ -1,0 +1,71 @@
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'livestock_counting_review/styles.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<div class="experiment-container">
+
+    <div class="progress-container">
+        <div class="progress-label">Step 2 of 8</div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: 25%"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        {{ if is_ai }}
+        <div class="card-header">
+            <h1>AUTOMATED COUNT</h1>
+            <p class="subtitle">Inventory Counting Procedures — Automated Analysis</p>
+        </div>
+
+        <div class="source-description">
+            <p>
+                The following livestock counts were prepared using <strong>DroneCount AI</strong>,
+                the firm's automated aerial counting tool. DroneCount AI processes aerial drone images
+                using computer vision algorithms to identify and count individual animals. The tool has
+                been deployed on multiple engagements and identifies livestock based on shape recognition
+                patterns calibrated for cattle and sheep.
+            </p>
+        </div>
+
+        <div class="workpaper-ref">
+            <table>
+                <tr><td>Workpaper Reference</td><td>W-420</td></tr>
+                <tr><td>Generated</td><td>January 15, 2026</td></tr>
+                <tr><td>Status</td><td>Ready for reviewer verification</td></tr>
+            </table>
+        </div>
+
+        {{ else }}
+        <div class="card-header">
+            <h1>TEAM MEMBER COUNT</h1>
+            <p class="subtitle">Inventory Counting Procedures — Manual Analysis</p>
+        </div>
+
+        <div class="source-description">
+            <p>
+                The following livestock counts were prepared by <strong>J. de Vries</strong>,
+                a member of the engagement team. J. de Vries reviewed the aerial drone images and
+                manually identified and counted individual animals. J. de Vries has two years of
+                audit experience and has participated in three prior inventory observation engagements.
+            </p>
+        </div>
+
+        <div class="workpaper-ref">
+            <table>
+                <tr><td>Workpaper Reference</td><td>W-420</td></tr>
+                <tr><td>Prepared</td><td>January 15, 2026</td></tr>
+                <tr><td>Status</td><td>Ready for reviewer verification</td></tr>
+            </table>
+        </div>
+        {{ endif }}
+
+        <div class="btn-container">
+            <button class="btn-next" type="submit">Continue to Photos →</button>
+        </div>
+    </div>
+</div>
+{{ endblock }}

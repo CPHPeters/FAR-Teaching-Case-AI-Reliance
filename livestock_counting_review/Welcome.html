@@ -1,0 +1,64 @@
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'livestock_counting_review/styles.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<div class="experiment-container">
+
+    <div class="progress-container">
+        <div class="progress-label">Step 1 of 8</div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: 12.5%"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h1>Livestock Counting Review</h1>
+            <p class="subtitle">Inventory Observation Procedures</p>
+        </div>
+
+        <h3 style="color: var(--far-dark);">Background</h3>
+        <p>
+            You are a senior associate on the audit of <strong>Greenfield Agricultural Holdings B.V.</strong>,
+            a Dutch livestock and arable farming group. Inventory is material — approximately 20% of total assets
+            (EUR 12.8 million) — and existence and completeness of livestock represent a
+            <strong>significant risk</strong> in the audit plan.
+        </p>
+        <p>
+            As part of inventory observation procedures, drone photographs were taken of cattle at
+            four properties. Counts were prepared from these photographs, and your task is to
+            <strong>review each photograph and verify the count</strong>.
+        </p>
+
+        <h3 style="color: var(--far-dark);">Your Task</h3>
+        <p>For each of the four photographs, you will:</p>
+        <ol class="steps-list">
+            <li>See the photograph and the count that was prepared</li>
+            <li>Zoom in on the image to examine it closely</li>
+            <li>Indicate whether you agree or disagree with the count</li>
+            <li>If you disagree, provide your corrected count</li>
+            <li>Move to the next photograph (you cannot go back)</li>
+        </ol>
+
+        <div class="info-box">
+            <strong>Important context:</strong> The engagement team has already completed the relevant planning and evidence-gathering procedures for these photographs. The image capture, property selection, and processing steps have been reviewed. Your task is limited to verifying whether the prepared livestock count for each photograph is accurate. Please focus only on recounting the cattle shown in each image and documenting any count differences you identify.
+        </div>
+
+        <div class="info-box">
+            <strong>Scope of your review:</strong> Do not evaluate image quality, audit planning, property selection, or broader inventory procedures. Assume those steps have already been reviewed. Your role is to verify the numerical count shown for each photograph.
+        </div>
+
+        <div class="info-box blue">
+            <strong>Note:</strong> For the best experience, please use a laptop rather than a phone.
+            The images contain detail that is difficult to see on small screens.
+        </div>
+
+        <div class="btn-container">
+            <button class="btn-next" type="submit">Begin Review →</button>
+        </div>
+    </div>
+</div>
+{{ endblock }}

@@ -1,0 +1,95 @@
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'livestock_counting_review/styles.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<div class="experiment-container">
+
+    <div class="progress-container">
+        <div class="progress-label">Step 7 of 8</div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: 87.5%"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h1>Post-Review Assessment</h1>
+            <p class="subtitle">Please answer the following questions about your review</p>
+        </div>
+
+        <!-- Q1: Confidence -->
+        <div class="form-group">
+            <label>1. How confident are you that your review of the four photographs was thorough?</label>
+            <div class="slider-container">
+                <div class="slider-value" id="confidence-val">50</div>
+                <input type="range" name="confidence" id="confidence-slider" min="0" max="100" value="50">
+                <div class="slider-labels">
+                    <span>Not at all confident</span>
+                    <span>Moderately confident</span>
+                    <span>Extremely confident</span>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 28px 0;">
+
+        <!-- Q2: Overall Assessment -->
+        <div class="form-group">
+            <label>2. Based on your review, which statement best describes your overall assessment?</label>
+            <div class="assessment-options">
+                <label>
+                    <input type="radio" name="overall_assessment" value="1">
+                    The counts are reliable. No additional procedures are needed.
+                </label>
+                <label>
+                    <input type="radio" name="overall_assessment" value="2">
+                    The counts are mostly reliable. Minor follow-up may be warranted.
+                </label>
+                <label>
+                    <input type="radio" name="overall_assessment" value="3">
+                    The counts contain discrepancies. Additional procedures are required.
+                </label>
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 28px 0;">
+
+        <!-- Q3: Perceived Reliability -->
+        <div class="form-group">
+            <label>3. How reliable do you consider the {{ if is_ai }}automated counting tool (DroneCount AI){{ else }}preparer (J. de Vries){{ endif }} to be?</label>
+            <div class="slider-container">
+                <div class="slider-value" id="reliability-val">50</div>
+                <input type="range" name="perceived_reliability" id="reliability-slider" min="0" max="100" value="50">
+                <div class="slider-labels">
+                    <span>Not at all reliable</span>
+                    <span>Moderately reliable</span>
+                    <span>Extremely reliable</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <button class="btn-next" type="submit">Submit Assessment →</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Confidence slider
+    var confSlider = document.getElementById('confidence-slider');
+    var confVal = document.getElementById('confidence-val');
+    confSlider.addEventListener('input', function() {
+        confVal.textContent = this.value;
+    });
+
+    // Reliability slider
+    var relSlider = document.getElementById('reliability-slider');
+    var relVal = document.getElementById('reliability-val');
+    relSlider.addEventListener('input', function() {
+        relVal.textContent = this.value;
+    });
+</script>
+{{ endblock }}

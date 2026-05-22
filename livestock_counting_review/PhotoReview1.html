@@ -1,0 +1,157 @@
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'livestock_counting_review/styles.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<div class="experiment-container">
+
+    <div class="progress-container">
+        <div class="progress-label">Step 3 of 8</div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: 37.5%"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h1>Photograph 1 of 4</h1>
+            <p class="subtitle">Review the image and verify the count below</p>
+        </div>
+
+        <div class="photo-container">
+            <img src="{{ static 'livestock_counting_review/Cows_1.jpg' }}" alt="Photograph 1" id="photo-img" onclick="openLightbox(this.src)">
+            <div class="photo-hint">Click the image to enlarge</div>
+        </div>
+
+        <div style="text-align: center;">
+            <div class="count-badge">{{ source_label }}</div>
+        </div>
+
+        <div class="form-group">
+            <label>Do you agree with this count?</label>
+            <div class="radio-group" id="agree-radios">
+                <label>
+                    <input type="radio" name="photo_1_agree" value="True" id="agree-yes"> <span>Yes</span>
+                </label>
+                <label>
+                    <input type="radio" name="photo_1_agree" value="False" id="agree-no"> <span>No</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="corrected-count-field" id="corrected-field">
+            <label for="id_photo_1_corrected_count"><strong>Your corrected count:</strong></label>
+            <input type="number" name="photo_1_corrected_count" id="id_photo_1_corrected_count" min="0" style="margin-top: 8px;" onwheel="this.blur()" onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown')event.preventDefault()">
+        </div>
+
+        <!-- Process tracking hidden fields -->
+        <input type="hidden" name="photo_1_time_spent" id="photo_1_time_spent" value="0">
+        <input type="hidden" name="photo_1_active_time" id="photo_1_active_time" value="0">
+        <input type="hidden" name="photo_1_image_focus_time" id="photo_1_image_focus_time" value="0">
+        <input type="hidden" name="photo_1_zoom_opened" id="photo_1_zoom_opened" value="False">
+        <input type="hidden" name="photo_1_zoom_count" id="photo_1_zoom_count" value="0">
+        <input type="hidden" name="photo_1_recount_started" id="photo_1_recount_started" value="False">
+
+        <div class="btn-container">
+            <button class="btn-next" type="submit">Next Photo →</button>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+    <div class="lightbox-close" onclick="closeLightbox()">✕</div>
+    <img src="" id="lightbox-img" alt="Enlarged photograph">
+</div>
+
+<script>
+    // ─── Lightbox ─────────────────────────────────────────────
+    var zoomCount = 0;
+    var zoomOpen = false;
+    
+    function openLightbox(src) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox').classList.add('active');
+        zoomCount++;
+        zoomOpen = true;
+        document.getElementById('photo_1_zoom_count').value = zoomCount;
+        document.getElementById('photo_1_zoom_opened').value = 'True';
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+        zoomOpen = false;
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLightbox();
+    });
+
+    // ─── Agree/Disagree toggle ────────────────────────────────
+    document.querySelectorAll('#agree-radios input').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            var field = document.getElementById('corrected-field');
+            if (this.value === 'False') {
+                field.classList.add('visible');
+            } else {
+                field.classList.remove('visible');
+                document.getElementById('id_photo_1_corrected_count').value = '';
+            }
+        });
+    });
+
+    // ─── Process tracking ─────────────────────────────────────
+    var pageStart = Date.now();
+    var isActive = true;
+    var activeMs = 0;
+    var imageFocusMs = 0;
+    var mouseOverImage = false;
+    var lastTick = Date.now();
+    var TICK_MS = 250;
+
+    // Visibility tracking
+    document.addEventListener('visibilitychange', function() {
+        isActive = !document.hidden;
+    });
+    window.addEventListener('blur', function() { isActive = false; });
+    window.addEventListener('focus', function() { isActive = true; });
+
+    // Image hover tracking
+    var photoContainer = document.querySelector('.photo-container');
+    if (photoContainer) {
+        photoContainer.addEventListener('mouseenter', function() { mouseOverImage = true; });
+        photoContainer.addEventListener('mouseleave', function() { mouseOverImage = false; });
+    }
+
+    // Accumulate active and image focus time
+    setInterval(function() {
+        var now = Date.now();
+        var delta = now - lastTick;
+        lastTick = now;
+        if (isActive) {
+            activeMs += delta;
+        }
+        if (isActive && (mouseOverImage || zoomOpen)) {
+            imageFocusMs += delta;
+        }
+    }, TICK_MS);
+
+    // On submit, populate hidden fields
+    document.querySelector('form').addEventListener('submit', function() {
+        var elapsed = (Date.now() - pageStart) / 1000;
+        document.getElementById('photo_1_time_spent').value = elapsed.toFixed(2);
+        document.getElementById('photo_1_active_time').value = (activeMs / 1000).toFixed(2);
+        document.getElementById('photo_1_image_focus_time').value = (imageFocusMs / 1000).toFixed(2);
+        
+        // Recount started: zoom opened, or ≥3s image focus, or ≥5s on page
+        var recountStarted = (zoomCount > 0) || (imageFocusMs >= 3000) || (elapsed >= 5);
+        document.getElementById('photo_1_recount_started').value = recountStarted ? 'True' : 'False';
+    });
+
+    // Prevent scroll wheel from changing number input value
+    document.getElementById('id_photo_1_corrected_count').addEventListener('wheel', function(e) {
+        e.preventDefault();
+        this.blur();
+    }, {passive: false});
+</script>
+{{ endblock }}

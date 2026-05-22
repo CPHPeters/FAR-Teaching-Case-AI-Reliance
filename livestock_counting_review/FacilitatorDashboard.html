@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facilitator Dashboard — Livestock Counting Review</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --far-blue: #4F81BD;
+            --far-dark: #365F91;
+            --far-light: #D6E4F0;
+            --text-primary: #2C3E50;
+            --text-secondary: #5D6D7E;
+            --border: #DCE1E8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F4F6F9;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .header {
+            background: var(--far-dark);
+            color: #fff;
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .header .meta { font-size: 13px; opacity: 0.8; }
+        .header .actions { display: flex; gap: 10px; }
+        .header button, .header a {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .header button:hover, .header a:hover { background: rgba(255,255,255,0.25); }
+        .dashboard { max-width: 1200px; margin: 24px auto; padding: 0 20px; }
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px;
+            text-align: center;
+        }
+        .summary-card .number { font-size: 32px; font-weight: 700; color: var(--far-blue); }
+        .summary-card .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .panel {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .panel-header {
+            background: var(--far-light);
+            padding: 14px 20px;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--far-dark);
+            border-bottom: 1px solid var(--border);
+        }
+        .panel-body { padding: 20px; }
+        .panel-note {
+            background: #FFFDE7;
+            border-left: 3px solid #FFB300;
+            padding: 10px 14px;
+            font-size: 12px;
+            margin-top: 16px;
+            border-radius: 0 4px 4px 0;
+            color: var(--text-secondary);
+        }
+        .chart-container { position: relative; height: 280px; margin: 10px 0; }
+        table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table.data-table th {
+            background: var(--far-light);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--far-dark);
+            border-bottom: 2px solid var(--border);
+        }
+        table.data-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #F0F0F0;
+        }
+        table.data-table tr:hover { background: #FAFBFC; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .auto-refresh { font-size: 12px; color: var(--text-secondary); }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        @media print {
+            .header .actions { display: none; }
+            body { background: #fff; }
+            .panel { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>📊 Facilitator Dashboard</h1>
+            <div class="meta">Livestock Counting Review — <span id="refresh-time"></span> <span class="auto-refresh">(auto-refreshes every 10s)</span></div>
+        </div>
+        <div class="actions">
+            <button onclick="refreshData()">↻ Refresh Now</button>
+            <button onclick="exportCSV()">📥 Export CSV</button>
+            <button onclick="window.print()">🖨 Print</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Facilitator Controls -->
+        <div class="panel" style="margin-bottom:20px;border-left:4px solid #FFB300">
+            <div class="panel-header" style="background:#FFFDE7;color:#5D4037">Facilitator Controls — Participant Live Results Page</div>
+            <div class="panel-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <span style="font-size:13px;color:var(--text-secondary)">Answers on participant screens:</span>
+                <span id="answers-status" style="font-weight:700;font-size:14px">Hidden</span>
+                <button id="btn-release" onclick="releaseAnswers()" style="padding:8px 18px;background:var(--far-blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🔓 Release Answers</button>
+                <button id="btn-hide" onclick="hideAnswers()" style="padding:8px 18px;background:#E74C3C;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;display:none">🔒 Hide Answers</button>
+                <span style="font-size:11px;color:var(--text-secondary);margin-left:auto">Session: <select id="session-select" onchange="switchSession()" style="font-size:12px;padding:2px 4px"><option value="">All sessions</option></select></span>
+            </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="summary-bar">
+            <div class="summary-card">
+                <div class="number" id="n-completed">–</div>
+                <div class="label">Completed (Overall)</div>
+            </div>
+            <div class="summary-card">
+                <div class="number" id="n-progress">–</div>
+                <div class="label">Still Working (Overall)</div>
+            </div>
+            <div class="summary-card">
+                <div class="number" id="n-ai">–</div>
+                <div class="label">AI (completed / in progress)</div>
+            </div>
+            <div class="summary-card">
+                <div class="number" id="n-human">–</div>
+                <div class="label">Human (completed / in progress)</div>
+            </div>
+        </div>
+
+        <!-- Panel A: Correct Counts -->
+        <div class="panel">
+            <div class="panel-header">Panel A — Correct Counts per Image</div>
+            <div class="panel-body">
+                <div class="chart-container"><canvas id="chart-correct"></canvas></div>
+                <div id="table-correct"></div>
+            </div>
+        </div>
+
+        <!-- Panel B: Agreement -->
+        <div class="panel">
+            <div class="panel-header">Panel B — Agreement with Preparer</div>
+            <div class="panel-body">
+                <div class="chart-container"><canvas id="chart-agreement"></canvas></div>
+                <div class="panel-note">
+                    <strong>Facilitator note:</strong> For photos 3 and 4, the displayed counts were overstated.
+                    Agreement with these counts suggests participants may have accepted the preparer's output without sufficient challenge.
+                    Photos 3 and 4 had overcounts of +5 and +8 respectively.
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Panel C: Confidence -->
+            <div class="panel">
+                <div class="panel-header">Panel C — Confidence in Review Quality</div>
+                <div class="panel-body">
+                    <div class="chart-container"><canvas id="chart-confidence"></canvas></div>
+                    <div class="panel-note">
+                        <strong>Facilitator note:</strong> High confidence combined with missed discrepancies
+                        can be used to discuss miscalibrated reliance.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel E: Perceived Reliability -->
+            <div class="panel">
+                <div class="panel-header">Panel E — Perceived Reliability</div>
+                <div class="panel-body">
+                    <div class="chart-container"><canvas id="chart-reliability"></canvas></div>
+                    <div class="panel-note">
+                        <strong>Facilitator note:</strong> Lower perceived reliability in the AI condition despite similar or
+                        better performance can be used to discuss under-reliance or algorithm aversion. Higher perceived reliability
+                        in the AI condition despite missed discrepancies can be used to discuss over-reliance.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel: Review Time -->
+        <div class="panel">
+            <div class="panel-header">Panel — Recounting / Verification Time by Photo</div>
+            <div class="panel-body">
+                <div class="chart-container"><canvas id="chart-time"></canvas></div>
+                <div id="table-time"></div>
+                <div class="panel-note">
+                    <strong>Facilitator note:</strong> Time spent reviewing is a proxy for verification effort. If AI-framed participants spend less time recounting, it may indicate reduced scrutiny. Interpret together with agreement rates and error detection.
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel: Zoom/Image Engagement -->
+        <div class="panel">
+            <div class="panel-header">Panel — Zoom / Image Engagement</div>
+            <div class="panel-body">
+                <div id="table-zoom"></div>
+                <div class="panel-note">
+                    <strong>Facilitator note:</strong> Zoom usage indicates whether participants examined photos closely. Lower zoom rates in one condition may indicate shallower review.
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel D: Overall Assessment -->
+        <div class="panel">
+            <div class="panel-header">Panel D — Overall Assessment</div>
+            <div class="panel-body">
+                <div class="chart-container"><canvas id="chart-assessment"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Panel F: Training Indicators -->
+        <div class="panel">
+            <div class="panel-header">Panel F — Training Indicators</div>
+            <div class="panel-body">
+                <div id="table-indicators"></div>
+                <div class="panel-note">
+                    <strong>Facilitator note:</strong> Comparing AI and human conditions helps the group discuss
+                    whether the same evidence was reviewed differently depending only on the source label.
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel: Debrief Prompts -->
+        <div class="panel">
+            <div class="panel-header">Panel — Suggested Debrief Prompts</div>
+            <div class="panel-body" style="font-size:13px">
+                <ul style="margin:0;padding-left:20px;line-height:1.8">
+                    <li>Did AI-framed participants spend less time recounting?</li>
+                    <li>Did higher agreement with the preparer coincide with lower recounting time?</li>
+                    <li>Did confidence differ from actual detection performance?</li>
+                    <li>Did perceived reliability differ by source even though the photos and counts were identical?</li>
+                    <li>Which CALIBRATE principles are most relevant to what happened here?</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ─── Data fetching ──────────────────────────────────────────────
+    var allCharts = {};
+    var dashboardData = null;
+
+    var activeSession = '';
+
+    function getPassword() {
+        var params = new URLSearchParams(window.location.search);
+        return params.get('password') || '';
+    }
+
+    function getApiUrl() {
+        var url = '/facilitator_api/?password=' + getPassword();
+        if (activeSession) url += '&session=' + encodeURIComponent(activeSession);
+        return url;
+    }
+
+    function switchSession() {
+        activeSession = document.getElementById('session-select').value;
+        refreshData();
+    }
+
+    async function releaseAnswers() {
+        if (!activeSession) { alert('Select a specific session first.'); return; }
+        await fetch('/facilitator_action/?password=' + getPassword() + '&session=' + activeSession + '&action=release_answers');
+        refreshData();
+    }
+
+    async function hideAnswers() {
+        if (!activeSession) { alert('Select a specific session first.'); return; }
+        await fetch('/facilitator_action/?password=' + getPassword() + '&session=' + activeSession + '&action=hide_answers');
+        refreshData();
+    }
+
+    async function refreshData() {
+        try {
+            var resp = await fetch(getApiUrl());
+            if (!resp.ok) {
+                if (resp.status === 403) {
+                    document.querySelector('.dashboard').innerHTML =
+                        '<div class="loading">⛔ Access denied. Check your password parameter.</div>';
+                    return;
+                }
+                throw new Error('HTTP ' + resp.status);
+            }
+            dashboardData = await resp.json();
+            // Populate session selector
+            if (dashboardData.sessions) {
+                var sel = document.getElementById('session-select');
+                var current = sel.value;
+                sel.innerHTML = '<option value="">All sessions</option>';
+                dashboardData.sessions.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s; opt.textContent = s;
+                    if (s === current) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            }
+            // Update answer release buttons
+            if (activeSession && dashboardData.session_flags && dashboardData.session_flags[activeSession]) {
+                var released = dashboardData.session_flags[activeSession].answers_released;
+                document.getElementById('answers-status').textContent = released ? '\u2705 Released' : 'Hidden';
+                document.getElementById('answers-status').style.color = released ? '#27AE60' : '#E74C3C';
+                document.getElementById('btn-release').style.display = released ? 'none' : '';
+                document.getElementById('btn-hide').style.display = released ? '' : 'none';
+            } else {
+                document.getElementById('answers-status').textContent = 'Select a session';
+                document.getElementById('answers-status').style.color = 'var(--text-secondary)';
+                document.getElementById('btn-release').style.display = '';
+                document.getElementById('btn-hide').style.display = 'none';
+            }
+            renderAll(dashboardData);
+            document.getElementById('refresh-time').textContent = new Date().toLocaleTimeString();
+        } catch (e) {
+            console.error('Refresh failed:', e);
+        }
+    }
+
+    // Auto-refresh
+    setInterval(refreshData, 10000);
+    refreshData();
+
+    // ─── Rendering ──────────────────────────────────────────────────
+    function renderAll(d) {
+        // Summary
+        document.getElementById('n-completed').textContent = d.n_completed;
+        document.getElementById('n-progress').textContent = d.n_in_progress;
+        document.getElementById('n-ai').textContent = d.n_ai + ' / ' + (d.n_ai_progress || 0);
+        document.getElementById('n-human').textContent = d.n_human + ' / ' + (d.n_human_progress || 0);
+
+        renderCorrectCounts(d);
+        renderAgreement(d);
+        renderConfidence(d);
+        renderReliability(d);
+        renderAssessment(d);
+        renderTimePanels(d);
+        renderZoomPanel(d);
+        renderIndicators(d);
+    }
+
+    function renderCorrectCounts(d) {
+        var labels = ['Photo 1 (30)', 'Photo 2 (42)', 'Photo 3 (79→74)', 'Photo 4 (65→57)'];
+        createGroupedBar('chart-correct', labels,
+            [d.correct_pct_ai[0], d.correct_pct_ai[1], d.correct_pct_ai[2], d.correct_pct_ai[3]],
+            [d.correct_pct_human[0], d.correct_pct_human[1], d.correct_pct_human[2], d.correct_pct_human[3]],
+            '% Correct Count'
+        );
+
+        var html = '<table class="data-table"><tr><th>Photo</th><th>Actual</th><th>AI %</th><th>Human %</th><th>Overall %</th></tr>';
+        var actuals = [30, 42, 74, 57];
+        var displayed = [30, 42, 79, 65];
+        for (var i = 0; i < 4; i++) {
+            html += '<tr><td>Photo ' + (i+1) + ' (shown: ' + displayed[i] + ')</td><td>' + actuals[i] + '</td>';
+            html += '<td>' + d.correct_pct_ai[i].toFixed(0) + '%</td>';
+            html += '<td>' + d.correct_pct_human[i].toFixed(0) + '%</td>';
+            html += '<td>' + d.correct_pct_all[i].toFixed(0) + '%</td></tr>';
+        }
+        html += '</table>';
+        document.getElementById('table-correct').innerHTML = html;
+    }
+
+    function renderAgreement(d) {
+        var labels = ['Photo 1 ✓', 'Photo 2 ✓', 'Photo 3 ✗', 'Photo 4 ✗'];
+        createGroupedBar('chart-agreement', labels,
+            [d.agree_pct_ai[0], d.agree_pct_ai[1], d.agree_pct_ai[2], d.agree_pct_ai[3]],
+            [d.agree_pct_human[0], d.agree_pct_human[1], d.agree_pct_human[2], d.agree_pct_human[3]],
+            '% Agreeing with Count'
+        );
+    }
+
+    function renderConfidence(d) {
+        createMeanBar('chart-confidence', ['AI Condition', 'Human Condition'],
+            [d.mean_confidence_ai, d.mean_confidence_human], 'Mean Confidence (0–100)');
+    }
+
+    function renderReliability(d) {
+        createMeanBar('chart-reliability', ['AI Condition', 'Human Condition'],
+            [d.mean_reliability_ai, d.mean_reliability_human], 'Mean Perceived Reliability (0–100)');
+    }
+
+    function renderAssessment(d) {
+        var labels = ['Reliable\n(no follow-up)', 'Mostly reliable\n(minor follow-up)', 'Discrepancies\n(additional procedures)'];
+        if (allCharts['chart-assessment']) allCharts['chart-assessment'].destroy();
+        var ctx = document.getElementById('chart-assessment').getContext('2d');
+        allCharts['chart-assessment'] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'AI', data: d.assessment_pct_ai, backgroundColor: '#4F81BD' },
+                    { label: 'Human', data: d.assessment_pct_human, backgroundColor: '#365F91' },
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: '% of Participants' } } },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+
+    function renderTimePanels(d) {
+        if (d.mean_photo_time_ai && d.mean_photo_time_human) {
+            var labels = ['Photo 1', 'Photo 2', 'Photo 3', 'Photo 4'];
+            if (allCharts['chart-time']) allCharts['chart-time'].destroy();
+            var ctx = document.getElementById('chart-time').getContext('2d');
+            allCharts['chart-time'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'AI', data: d.mean_photo_time_ai, backgroundColor: '#4F81BD' },
+                        { label: 'Human', data: d.mean_photo_time_human, backgroundColor: '#365F91' },
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Mean Seconds' } } },
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+
+            var html = '<table class="data-table"><tr><th>Photo</th><th>AI (page)</th><th>Human (page)</th><th>AI (image focus)</th><th>Human (image focus)</th></tr>';
+            for (var i = 0; i < 4; i++) {
+                html += '<tr><td>Photo ' + (i+1) + '</td>';
+                html += '<td>' + (d.mean_photo_time_ai[i] || 0).toFixed(1) + 's</td>';
+                html += '<td>' + (d.mean_photo_time_human[i] || 0).toFixed(1) + 's</td>';
+                html += '<td>' + ((d.mean_image_focus_time_ai || [])[i] || 0).toFixed(1) + 's</td>';
+                html += '<td>' + ((d.mean_image_focus_time_human || [])[i] || 0).toFixed(1) + 's</td></tr>';
+            }
+            html += '</table>';
+            document.getElementById('table-time').innerHTML = html;
+        }
+    }
+
+    function renderZoomPanel(d) {
+        if (d.zoom_open_pct_ai || d.zoom_open_pct_human) {
+            var html = '<table class="data-table"><tr><th>Metric</th><th>AI</th><th>Human</th><th>Overall</th></tr>';
+            for (var i = 0; i < 4; i++) {
+                html += '<tr><td>Photo ' + (i+1) + ' zoom opened (%)</td>';
+                html += '<td>' + ((d.zoom_open_pct_ai || [])[i] || 0).toFixed(0) + '%</td>';
+                html += '<td>' + ((d.zoom_open_pct_human || [])[i] || 0).toFixed(0) + '%</td>';
+                html += '<td>' + ((d.zoom_open_pct_all || [])[i] || 0).toFixed(0) + '%</td></tr>';
+            }
+            html += '<tr style="font-weight:600"><td>Any photo zoomed (%)</td>';
+            html += '<td>' + (d.zoom_any_pct_ai || 0).toFixed(0) + '%</td>';
+            html += '<td>' + (d.zoom_any_pct_human || 0).toFixed(0) + '%</td>';
+            html += '<td>' + (d.zoom_any_pct_all || 0).toFixed(0) + '%</td></tr>';
+            html += '</table>';
+            document.getElementById('table-zoom').innerHTML = html;
+        }
+    }
+
+    function renderIndicators(d) {
+        var html = '<table class="data-table">';
+        html += '<tr><th>Indicator</th><th>AI</th><th>Human</th><th>Overall</th></tr>';
+        var rows = [
+            ['Mean Total Correct (out of 4)', d.mean_total_correct_ai, d.mean_total_correct_human, d.mean_total_correct_all],
+            ['Mean Overreliance Score (0–2)', d.mean_overreliance_ai, d.mean_overreliance_human, d.mean_overreliance_all],
+            ['Mean Underreliance Score (0–2)', d.mean_underreliance_ai, d.mean_underreliance_human, d.mean_underreliance_all],
+            ['Mean Absolute Error', d.mean_abs_error_ai, d.mean_abs_error_human, d.mean_abs_error_all],
+        ];
+        // Add time metrics if available
+        if (d.mean_total_time_ai !== undefined) {
+            rows.push(['Mean Total Review Time (s)', d.mean_total_time_ai, d.mean_total_time_human, d.mean_total_time_all]);
+        }
+        if (d.mean_total_image_focus_time_ai !== undefined) {
+            rows.push(['Mean Image Focus Time (s)', d.mean_total_image_focus_time_ai, d.mean_total_image_focus_time_human, d.mean_total_image_focus_time_all]);
+        }
+        if (d.zoom_any_pct_ai !== undefined) {
+            rows.push(['% Opened Zoom At Least Once', d.zoom_any_pct_ai, d.zoom_any_pct_human, d.zoom_any_pct_all]);
+        }
+        rows.push(['N Completed', d.n_ai, d.n_human, d.n_completed]);
+        rows.push(['N In Progress', d.n_ai_progress, d.n_human_progress, d.n_in_progress]);
+        rows.forEach(function(r) {
+            html += '<tr><td>' + r[0] + '</td>';
+            html += '<td>' + (typeof r[1] === 'number' ? r[1].toFixed(2) : r[1]) + '</td>';
+            html += '<td>' + (typeof r[2] === 'number' ? r[2].toFixed(2) : r[2]) + '</td>';
+            html += '<td>' + (typeof r[3] === 'number' ? r[3].toFixed(2) : r[3]) + '</td></tr>';
+        });
+        html += '</table>';
+        document.getElementById('table-indicators').innerHTML = html;
+    }
+
+    // ─── Chart Helpers ──────────────────────────────────────────────
+    function createGroupedBar(id, labels, aiData, humanData, yLabel) {
+        if (allCharts[id]) allCharts[id].destroy();
+        var ctx = document.getElementById(id).getContext('2d');
+        allCharts[id] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'AI', data: aiData, backgroundColor: '#4F81BD' },
+                    { label: 'Human', data: humanData, backgroundColor: '#365F91' },
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: yLabel } } },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+
+    function createMeanBar(id, labels, data, yLabel) {
+        if (allCharts[id]) allCharts[id].destroy();
+        var ctx = document.getElementById(id).getContext('2d');
+        allCharts[id] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{ data: data, backgroundColor: ['#4F81BD', '#365F91'] }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: yLabel } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // ─── CSV Export ─────────────────────────────────────────────────
+    function exportCSV() {
+        window.location.href = '/facilitator_csv/?password=' + getPassword();
+    }
+    </script>
+</body>
+</html>

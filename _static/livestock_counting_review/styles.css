@@ -1,0 +1,443 @@
+/* ─── Livestock Counting Review Styles ─── */
+
+:root {
+    --far-blue: #4F81BD;
+    --far-dark: #365F91;
+    --far-light: #D6E4F0;
+    --far-bg: #F7F9FC;
+    --text-primary: #2C3E50;
+    --text-secondary: #5D6D7E;
+    --border: #DCE1E8;
+    --success: #27AE60;
+    --warning: #F39C12;
+    --danger: #E74C3C;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--far-bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.experiment-container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+
+/* ─── Progress Bar ─── */
+.progress-container {
+    margin-bottom: 32px;
+}
+
+.progress-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.progress-bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--far-blue);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+/* ─── Card ─── */
+.card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 36px 40px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.card-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.card-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--far-dark);
+    margin: 0 0 6px;
+}
+
+.card-header .subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ─── Workpaper Reference ─── */
+.workpaper-ref {
+    background: var(--far-light);
+    border-left: 4px solid var(--far-blue);
+    padding: 14px 18px;
+    margin: 20px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+}
+
+.workpaper-ref table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.workpaper-ref td {
+    padding: 3px 0;
+}
+
+.workpaper-ref td:first-child {
+    font-weight: 600;
+    color: var(--far-dark);
+    width: 180px;
+}
+
+/* ─── Source Info ─── */
+.source-description {
+    background: #FAFBFC;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* ─── Photo Display ─── */
+.photo-container {
+    text-align: center;
+    margin: 24px 0;
+}
+
+.photo-container img {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+}
+
+.photo-container img:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.photo-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.count-badge {
+    display: inline-block;
+    background: var(--far-blue);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 8px;
+    margin: 16px 0;
+}
+
+.count-badge.ai {
+    background: var(--far-blue);
+}
+
+.count-badge.human {
+    background: var(--far-dark);
+}
+
+/* ─── Form Elements ─── */
+.form-group {
+    margin: 24px 0;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.radio-group {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+    cursor: pointer;
+    padding: 10px 20px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.radio-group label:hover {
+    border-color: var(--far-blue);
+    background: var(--far-light);
+}
+
+.radio-group input[type="radio"]:checked + span,
+.radio-group label:has(input:checked) {
+    border-color: var(--far-blue);
+    background: var(--far-light);
+}
+
+input[type="number"] {
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-size: 16px;
+    width: 140px;
+    transition: border-color 0.2s;
+}
+
+input[type="number"]:focus {
+    border-color: var(--far-blue);
+    outline: none;
+}
+
+/* ─── Slider ─── */
+.slider-container {
+    margin: 20px 0;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.slider-value {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--far-blue);
+    margin: 8px 0;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--border);
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--far-blue);
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* ─── Assessment Radio ─── */
+.assessment-options label {
+    display: block;
+    padding: 14px 18px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 400;
+}
+
+.assessment-options label:hover {
+    border-color: var(--far-blue);
+    background: var(--far-light);
+}
+
+.assessment-options input[type="radio"] {
+    margin-right: 10px;
+}
+
+/* ─── Buttons ─── */
+.btn-container {
+    text-align: center;
+    margin-top: 32px;
+}
+
+.btn-next {
+    display: inline-block;
+    background: var(--far-blue);
+    color: #fff;
+    border: none;
+    padding: 14px 48px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-next:hover {
+    background: var(--far-dark);
+}
+
+/* ─── Info Box ─── */
+.info-box {
+    background: #FFF8E1;
+    border-left: 4px solid #FFB300;
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    margin: 16px 0;
+}
+
+.info-box.blue {
+    background: var(--far-light);
+    border-left-color: var(--far-blue);
+}
+
+/* ─── Numbered Steps ─── */
+.steps-list {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+}
+
+.steps-list li {
+    counter-increment: step;
+    padding: 8px 0 8px 40px;
+    position: relative;
+    font-size: 14px;
+}
+
+.steps-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 26px;
+    height: 26px;
+    background: var(--far-blue);
+    color: #fff;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 26px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ─── Corrected Count ─── */
+.corrected-count-field {
+    display: none;
+    margin-top: 12px;
+    padding: 16px;
+    background: #FFF8E1;
+    border-radius: 8px;
+    border: 1px solid #FFE082;
+}
+
+.corrected-count-field.visible {
+    display: block;
+}
+
+/* ─── Completion ─── */
+.completion-icon {
+    text-align: center;
+    font-size: 64px;
+    margin: 20px 0;
+}
+
+.completion-message {
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+/* ─── Lightbox ─── */
+.lightbox-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+    cursor: zoom-out;
+    justify-content: center;
+    align-items: center;
+}
+
+.lightbox-overlay.active {
+    display: flex;
+}
+
+.lightbox-overlay img {
+    max-width: 95vw;
+    max-height: 95vh;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.lightbox-close {
+    position: fixed;
+    top: 16px;
+    right: 24px;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    z-index: 10000;
+    background: rgba(0,0,0,0.4);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ─── Error Messages ─── */
+.otree-form-errors,
+.form-error {
+    background: #FDEDEE;
+    border: 1px solid #E74C3C;
+    color: #C0392B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 12px 0;
+    font-size: 14px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+    .card { padding: 24px 20px; }
+    .radio-group { flex-direction: column; gap: 8px; }
+    .count-badge { font-size: 16px; padding: 8px 18px; }
+}
+
+/* ─── Print ─── */
+@media print {
+    body { background: #fff; }
+    .progress-container, .btn-container { display: none; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+}

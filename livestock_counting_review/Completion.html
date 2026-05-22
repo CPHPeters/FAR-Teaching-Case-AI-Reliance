@@ -1,0 +1,496 @@
+{{ block title }}Review Complete{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'livestock_counting_review/styles.css' }}">
+<style>
+    .live-results { max-width: 940px; margin: 0 auto; }
+
+    /* Banner */
+    .thank-you-banner {
+        background: linear-gradient(135deg, var(--far-blue), var(--far-dark));
+        color: #fff; text-align: center; padding: 28px 20px; border-radius: 12px; margin-bottom: 24px;
+    }
+    .thank-you-banner h2 { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
+    .thank-you-banner p { margin: 0; opacity: 0.9; font-size: 14px; }
+
+    /* Status bar */
+    .status-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 16px; background: var(--far-light); border-radius: 8px;
+        margin-bottom: 24px; font-size: 12px; color: var(--text-secondary);
+    }
+    .status-bar .counts { display: flex; gap: 16px; flex-wrap: wrap; }
+    .status-bar .count-item { display: flex; align-items: center; gap: 5px; }
+    .status-bar .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-bar .dot.completed { background: var(--success); }
+    .status-bar .dot.working { background: var(--warning); }
+    .status-bar .dot.ai { background: var(--far-blue); }
+    .status-bar .dot.human { background: var(--far-dark); }
+    .live-pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--success); margin-right: 4px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* Section headers */
+    .section-header {
+        font-size: 18px; font-weight: 700; color: var(--far-dark);
+        margin: 32px 0 16px; padding-bottom: 8px;
+        border-bottom: 2px solid var(--far-blue);
+    }
+    .section-header:first-of-type { margin-top: 8px; }
+    .section-sub { font-size: 13px; font-weight: 400; color: var(--text-secondary); margin-left: 8px; }
+
+    /* Condition comparison cards */
+    .condition-compare {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;
+    }
+    .cond-card {
+        background: #fff; border-radius: 10px; padding: 20px 24px;
+        border: 2px solid var(--border); position: relative; overflow: hidden;
+    }
+    .cond-card.ai { border-top: 4px solid var(--far-blue); }
+    .cond-card.human { border-top: 4px solid var(--far-dark); }
+    .cond-label {
+        font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+        margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .cond-card.ai .cond-label { color: var(--far-blue); }
+    .cond-card.human .cond-label { color: var(--far-dark); }
+    .cond-icon { font-size: 14px; }
+    .cond-card .big-num {
+        font-size: 36px; font-weight: 800; line-height: 1.1; margin-bottom: 4px;
+    }
+    .cond-card.ai .big-num { color: var(--far-blue); }
+    .cond-card.human .big-num { color: var(--far-dark); }
+    .cond-card .metric-label { font-size: 12px; color: var(--text-secondary); }
+
+    /* Delta badge */
+    .delta-row {
+        text-align: center; margin: -8px 0 20px; font-size: 13px;
+        color: var(--text-secondary);
+    }
+    .delta-badge {
+        display: inline-block; padding: 3px 10px; border-radius: 12px;
+        font-weight: 700; font-size: 12px;
+        background: #F5F5F5; color: var(--text-secondary);
+    }
+
+    /* Photo breakdown table */
+    .photo-table {
+        width: 100%; border-collapse: collapse; font-size: 13px;
+        background: #fff; border-radius: 8px; overflow: hidden;
+        border: 1px solid var(--border); margin-bottom: 16px;
+    }
+    .photo-table th {
+        background: var(--far-light); padding: 10px 14px; text-align: center;
+        font-weight: 600; color: var(--far-dark); font-size: 12px;
+        border-bottom: 2px solid var(--border);
+    }
+    .photo-table th:first-child { text-align: left; }
+    .photo-table td {
+        padding: 10px 14px; text-align: center;
+        border-bottom: 1px solid #F0F2F5;
+    }
+    .photo-table td:first-child { text-align: left; font-weight: 600; color: var(--far-dark); }
+    .photo-table .col-ai { color: var(--far-blue); font-weight: 700; }
+    .photo-table .col-human { color: var(--far-dark); font-weight: 700; }
+    .photo-table .col-delta { font-weight: 600; font-size: 12px; }
+    .photo-table tr:last-child td { border-bottom: none; }
+    .photo-table .row-error { background: #FFF8E1; }
+
+    /* Horizontal bar comparison */
+    .hbar-group { margin-bottom: 14px; }
+    .hbar-label { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .hbar-pair { display: flex; flex-direction: column; gap: 3px; }
+    .hbar-row { display: flex; align-items: center; gap: 8px; }
+    .hbar-cond { font-size: 10px; width: 50px; text-align: right; color: var(--text-secondary); flex-shrink: 0; }
+    .hbar-track { flex: 1; height: 20px; background: #EEF1F5; border-radius: 3px; overflow: hidden; }
+    .hbar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .hbar-fill.ai { background: var(--far-blue); }
+    .hbar-fill.human { background: var(--far-dark); }
+    .hbar-val { font-size: 12px; font-weight: 700; width: 50px; flex-shrink: 0; }
+    .hbar-val.ai { color: var(--far-blue); }
+    .hbar-val.human { color: var(--far-dark); }
+
+    /* Metric row (simple side-by-side) */
+    .metric-row {
+        display: flex; gap: 12px; margin-bottom: 12px;
+    }
+    .metric-box {
+        flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 8px;
+        padding: 16px; text-align: center;
+    }
+    .metric-box .mv { font-size: 28px; font-weight: 800; }
+    .metric-box.ai .mv { color: var(--far-blue); }
+    .metric-box.human .mv { color: var(--far-dark); }
+    .metric-box.overall .mv { color: var(--text-secondary); }
+    .metric-box .ml { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Answer key */
+    .answer-key {
+        background: #fff; border: 1px solid var(--border); border-radius: 10px;
+        overflow: hidden; margin-bottom: 20px;
+    }
+    .answer-key-header {
+        background: linear-gradient(135deg, #E8F5E9, #C8E6C9); padding: 14px 20px;
+        font-weight: 700; font-size: 14px; color: #2E7D32;
+        border-bottom: 1px solid #A5D6A7;
+    }
+    .answer-key-body { padding: 16px 20px; }
+    .answer-row {
+        display: flex; align-items: center; padding: 10px 0;
+        border-bottom: 1px solid #F0F2F5; flex-wrap: wrap; gap: 8px;
+    }
+    .answer-row:last-child { border-bottom: none; }
+    .answer-photo { font-weight: 700; width: 80px; color: var(--far-dark); font-size: 13px; }
+    .answer-counts { flex: 1; font-size: 13px; color: var(--text-primary); min-width: 180px; }
+    .answer-tag {
+        padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;
+    }
+    .answer-tag.correct { background: #E8F5E9; color: #2E7D32; }
+    .answer-tag.error { background: #FDEDEE; color: #C0392B; }
+    .answer-pcts { display: flex; gap: 12px; margin-left: 12px; }
+    .answer-pct { font-size: 11px; font-weight: 600; }
+    .answer-pct.ai { color: var(--far-blue); }
+    .answer-pct.human { color: var(--far-dark); }
+
+    /* Insight callout */
+    .insight-box {
+        background: #FFF8E1; border-left: 4px solid #FFB300;
+        padding: 12px 16px; border-radius: 0 8px 8px 0;
+        font-size: 13px; color: #5D4E37; margin-bottom: 20px; line-height: 1.5;
+    }
+    .insight-box strong { color: #E65100; }
+
+    /* Legend */
+    .legend-bar {
+        display: flex; gap: 20px; margin-bottom: 16px; font-size: 12px; color: var(--text-secondary);
+    }
+    .legend-bar .leg { display: flex; align-items: center; gap: 5px; }
+    .legend-bar .swatch { width: 14px; height: 10px; border-radius: 2px; }
+
+    /* Wait notice */
+    .wait-notice {
+        background: var(--far-light); border-radius: 8px; padding: 12px 18px;
+        text-align: center; font-size: 13px; margin-bottom: 20px; color: var(--far-dark);
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+        .condition-compare { grid-template-columns: 1fr; }
+        .metric-row { flex-direction: column; }
+        .hbar-cond { width: 40px; font-size: 9px; }
+        .answer-pcts { flex-direction: column; gap: 2px; }
+    }
+</style>
+{{ endblock }}
+
+{{ block content }}
+<div class="experiment-container live-results">
+
+    <div class="progress-container">
+        <div class="progress-label">Step {{ step }} of {{ total_steps }}</div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: 100%"></div>
+        </div>
+    </div>
+
+    <div class="thank-you-banner">
+        <h2>✅ Review Complete</h2>
+        <p>Thank you for completing the Livestock Counting Review. Your responses have been recorded.</p>
+    </div>
+
+    <div class="wait-notice">
+        You may keep this page open while the group finishes. The results below update automatically.
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+        <div class="counts">
+            <span class="count-item"><span class="dot completed"></span><strong id="n_completed">–</strong> completed</span>
+            <span class="count-item"><span class="dot working"></span><strong id="n_in_progress">–</strong> still working</span>
+            <span class="count-item"><span class="dot ai"></span><strong id="n_ai">–</strong> AI</span>
+            <span class="count-item"><span class="dot human"></span><strong id="n_human">–</strong> Human</span>
+        </div>
+        <div><span class="live-pulse"></span><span id="last_updated">Loading…</span></div>
+    </div>
+
+    <div class="legend-bar">
+        <span class="leg"><span class="swatch" style="background:var(--far-blue)"></span>AI Condition (DroneCount AI)</span>
+        <span class="leg"><span class="swatch" style="background:var(--far-dark)"></span>Human Condition (J. de Vries)</span>
+    </div>
+
+    <!-- ═══ SECTION 1: Did the Source Matter? ═══ -->
+    <div class="section-header">
+        Did the Source of the Count Matter?
+        <span class="section-sub">Agreement with the preparer's count</span>
+    </div>
+    <div id="section-agreement"></div>
+
+    <!-- ═══ SECTION 2: Who Caught the Errors? ═══ -->
+    <div class="section-header">
+        Who Caught the Errors?
+        <span class="section-sub">Photos 3 &amp; 4 contained overcounts</span>
+    </div>
+    <div id="section-errors"></div>
+
+    <!-- ═══ SECTION 3: How Long Did They Look? ═══ -->
+    <div class="section-header">
+        How Long Did They Look?
+        <span class="section-sub">Average review time per photograph</span>
+    </div>
+    <div id="section-time"></div>
+
+    <!-- ═══ SECTION 4: Confidence & Perceived Reliability ═══ -->
+    <div class="section-header">
+        Confidence &amp; Perceived Reliability
+        <span class="section-sub">Post-review self-assessment</span>
+    </div>
+    <div id="section-perceptions"></div>
+
+    <!-- ═══ SECTION 5: Answer Key ═══ -->
+    <div class="section-header" id="answer-key-header">
+        Answer Key
+        <span class="section-sub">How did the group perform?</span>
+    </div>
+    <div id="section-answers"></div>
+</div>
+
+<script>
+/* ═══ oTree live-page integration ═══ */
+var latestResults = js_vars.initial_results;
+
+function refreshResults() {
+    try {
+        liveSend({type: 'refresh'});
+    } catch (err) {
+        console.error('liveSend failed:', err);
+    }
+}
+
+function liveRecv(data) {
+    latestResults = data;
+    renderResults(data);
+}
+
+/* ═══ Rendering helpers ═══ */
+function fmtPct(v) { return (v != null && v > 0) ? Math.round(v) + '%' : '–'; }
+function fmtSecs(v) { return (v != null && v > 0) ? v.toFixed(1) + 's' : '–'; }
+function fmtNum2(v) { return (v != null) ? v.toFixed(2) : '–'; }
+
+function deltaPP(ai, hu) {
+    if (ai == null || hu == null || (!ai && !hu)) return '';
+    var diff = ai - hu;
+    var abs = Math.abs(diff).toFixed(1);
+    if (abs < 0.5) return '<span class="delta-badge">No difference</span>';
+    var dir = diff > 0 ? 'AI higher' : 'Human higher';
+    return '<span class="delta-badge">Δ ' + abs + ' pp · ' + dir + '</span>';
+}
+
+function condCard(cls, icon, label, bigNum, metricLabel) {
+    return '<div class="cond-card ' + cls + '">' +
+        '<div class="cond-label"><span class="cond-icon">' + icon + '</span>' + label + '</div>' +
+        '<div class="big-num">' + bigNum + '</div>' +
+        '<div class="metric-label">' + metricLabel + '</div>' +
+        '</div>';
+}
+
+function hbarGroup(label, aiVal, huVal, maxVal, isTime) {
+    var aiW = maxVal > 0 ? Math.min(aiVal / maxVal * 100, 100) : 0;
+    var huW = maxVal > 0 ? Math.min(huVal / maxVal * 100, 100) : 0;
+    var fmt = isTime ? fmtSecs : fmtPct;
+    return '<div class="hbar-group">' +
+        '<div class="hbar-label">' + label + '</div>' +
+        '<div class="hbar-pair">' +
+        '<div class="hbar-row"><span class="hbar-cond">AI</span><div class="hbar-track"><div class="hbar-fill ai" style="width:' + aiW + '%"></div></div><span class="hbar-val ai">' + fmt(aiVal) + '</span></div>' +
+        '<div class="hbar-row"><span class="hbar-cond">Human</span><div class="hbar-track"><div class="hbar-fill human" style="width:' + huW + '%"></div></div><span class="hbar-val human">' + fmt(huVal) + '</span></div>' +
+        '</div></div>';
+}
+
+/* ═══ Main render function ═══ */
+function renderResults(d) {
+    if (!d) return;
+
+    // Status bar
+    document.getElementById('n_completed').textContent = d.n_completed || 0;
+    document.getElementById('n_in_progress').textContent = d.n_in_progress || 0;
+    document.getElementById('n_ai').textContent = d.n_completed_ai || 0;
+    document.getElementById('n_human').textContent = d.n_completed_human || 0;
+    document.getElementById('last_updated').textContent = new Date().toLocaleTimeString();
+
+    if (d.n_completed === 0) {
+        document.getElementById('section-agreement').innerHTML =
+            '<div class="insight-box">Waiting for the first participant to complete the review…</div>';
+        document.getElementById('section-errors').innerHTML = '';
+        document.getElementById('section-time').innerHTML = '';
+        document.getElementById('section-perceptions').innerHTML = '';
+        document.getElementById('section-answers').innerHTML = '';
+        document.getElementById('answer-key-header').style.display = 'none';
+        return;
+    }
+    document.getElementById('answer-key-header').style.display = '';
+
+    // ═══ SECTION 1: Agreement ═══
+    var agreeHtml = '';
+    var aiAgreeAll = 0, huAgreeAll = 0;
+    for (var i = 0; i < 4; i++) {
+        aiAgreeAll += (d.agree_pct_ai[i] || 0);
+        huAgreeAll += (d.agree_pct_human[i] || 0);
+    }
+    aiAgreeAll /= 4; huAgreeAll /= 4;
+
+    agreeHtml += '<div class="condition-compare">' +
+        condCard('ai', '🤖', 'AI CONDITION', fmtPct(aiAgreeAll), 'avg. agreement across all photos') +
+        condCard('human', '👤', 'HUMAN CONDITION', fmtPct(huAgreeAll), 'avg. agreement across all photos') +
+        '</div>';
+    agreeHtml += '<div class="delta-row">' + deltaPP(aiAgreeAll, huAgreeAll) + '</div>';
+
+    agreeHtml += '<table class="photo-table"><tr><th>Photo</th><th>AI Condition</th><th>Human Condition</th><th>Δ</th></tr>';
+    for (var i = 0; i < 4; i++) {
+        var rowCls = (i >= 2) ? ' class="row-error"' : '';
+        var aiV = d.agree_pct_ai[i] || 0;
+        var huV = d.agree_pct_human[i] || 0;
+        var diff = aiV - huV;
+        var diffStr = Math.abs(diff) < 0.5 ? '—' : (diff > 0 ? '+' : '') + Math.round(diff) + ' pp';
+        var photoLabel = 'Photo ' + (i+1);
+        if (i >= 2) photoLabel += ' ⚠️';
+        agreeHtml += '<tr' + rowCls + '><td>' + photoLabel + '</td><td class="col-ai">' + fmtPct(aiV) + '</td><td class="col-human">' + fmtPct(huV) + '</td><td class="col-delta">' + diffStr + '</td></tr>';
+    }
+    agreeHtml += '</table>';
+    if (d.n_completed >= 2) {
+        agreeHtml += '<div class="insight-box"><strong>Key question:</strong> Did participants who believed the counts came from AI accept them more or less readily than those who believed a human prepared them? Look at Photos 3 &amp; 4 — those contained errors.</div>';
+    }
+    document.getElementById('section-agreement').innerHTML = agreeHtml;
+
+    // ═══ SECTION 2: Error Detection ═══
+    var errHtml = '';
+    var aiCatchRate = ((100 - (d.agree_pct_ai[2] || 0)) + (100 - (d.agree_pct_ai[3] || 0))) / 2;
+    var huCatchRate = ((100 - (d.agree_pct_human[2] || 0)) + (100 - (d.agree_pct_human[3] || 0))) / 2;
+
+    errHtml += '<div class="condition-compare">' +
+        condCard('ai', '🤖', 'AI CONDITION', fmtPct(aiCatchRate), 'challenged incorrect counts (Photos 3–4)') +
+        condCard('human', '👤', 'HUMAN CONDITION', fmtPct(huCatchRate), 'challenged incorrect counts (Photos 3–4)') +
+        '</div>';
+    errHtml += '<div class="delta-row">' + deltaPP(aiCatchRate, huCatchRate) + '</div>';
+
+    errHtml += '<div class="metric-row">' +
+        '<div class="metric-box ai"><div class="mv">' + fmtNum2(d.mean_overreliance_ai) + '</div><div class="ml">Overreliance (0–2)<br>Accepted wrong counts</div></div>' +
+        '<div class="metric-box human"><div class="mv">' + fmtNum2(d.mean_overreliance_human) + '</div><div class="ml">Overreliance (0–2)<br>Accepted wrong counts</div></div>' +
+        '</div>';
+
+    errHtml += '<div class="metric-row">' +
+        '<div class="metric-box ai"><div class="mv">' + fmtNum2(d.mean_underreliance_ai) + '</div><div class="ml">Underreliance (0–2)<br>Rejected correct counts</div></div>' +
+        '<div class="metric-box human"><div class="mv">' + fmtNum2(d.mean_underreliance_human) + '</div><div class="ml">Underreliance (0–2)<br>Rejected correct counts</div></div>' +
+        '</div>';
+
+    if (d.mean_correct_error_detection_ai !== undefined) {
+        errHtml += '<div class="metric-row">' +
+            '<div class="metric-box ai"><div class="mv">' + fmtNum2(d.mean_correct_error_detection_ai) + '</div><div class="ml">Correct Error Detection (0–2)<br>Challenged AND corrected to actual</div></div>' +
+            '<div class="metric-box human"><div class="mv">' + fmtNum2(d.mean_correct_error_detection_human) + '</div><div class="ml">Correct Error Detection (0–2)<br>Challenged AND corrected to actual</div></div>' +
+            '</div>';
+    }
+    document.getElementById('section-errors').innerHTML = errHtml;
+
+    // ═══ SECTION 3: Review Time ═══
+    var timeHtml = '';
+    if (d.mean_photo_time_ai && d.mean_photo_time_human) {
+        var maxTime = 0;
+        for (var i = 0; i < 4; i++) {
+            maxTime = Math.max(maxTime, d.mean_photo_time_ai[i] || 0, d.mean_photo_time_human[i] || 0);
+        }
+        maxTime = Math.max(maxTime, 10);
+
+        for (var i = 0; i < 4; i++) {
+            var label = 'Photo ' + (i+1);
+            if (i >= 2) label += ' ⚠️';
+            timeHtml += hbarGroup(label, d.mean_photo_time_ai[i] || 0, d.mean_photo_time_human[i] || 0, maxTime, true);
+        }
+
+        timeHtml += '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">';
+        timeHtml += '<div class="condition-compare">' +
+            condCard('ai', '🤖', 'AI CONDITION', fmtSecs(d.mean_total_time_ai), 'avg. total review time') +
+            condCard('human', '👤', 'HUMAN CONDITION', fmtSecs(d.mean_total_time_human), 'avg. total review time') +
+            '</div>';
+
+        if (d.mean_total_time_ai > 0 && d.mean_total_time_human > 0) {
+            var timeDiff = d.mean_total_time_ai - d.mean_total_time_human;
+            var timeAbs = Math.abs(timeDiff).toFixed(1);
+            var timeDir = timeDiff > 0 ? 'AI spent more time' : 'Human spent more time';
+            if (Math.abs(timeDiff) >= 1) {
+                timeHtml += '<div class="delta-row"><span class="delta-badge">Δ ' + timeAbs + 's · ' + timeDir + '</span></div>';
+            }
+        }
+    }
+    document.getElementById('section-time').innerHTML = timeHtml;
+
+    // ═══ SECTION 4: Confidence & Reliability ═══
+    var percHtml = '';
+    percHtml += '<div class="condition-compare">' +
+        condCard('ai', '🤖', 'AI CONDITION', fmtPct(d.mean_confidence_ai), 'confidence in own review') +
+        condCard('human', '👤', 'HUMAN CONDITION', fmtPct(d.mean_confidence_human), 'confidence in own review') +
+        '</div>';
+    percHtml += '<div class="delta-row">' + deltaPP(d.mean_confidence_ai, d.mean_confidence_human) + '</div>';
+
+    percHtml += '<div class="condition-compare">' +
+        condCard('ai', '🤖', 'AI CONDITION', fmtPct(d.mean_reliability_ai), 'perceived reliability of preparer') +
+        condCard('human', '👤', 'HUMAN CONDITION', fmtPct(d.mean_reliability_human), 'perceived reliability of preparer') +
+        '</div>';
+    percHtml += '<div class="delta-row">' + deltaPP(d.mean_reliability_ai, d.mean_reliability_human) + '</div>';
+
+    if (d.assessment_pct_ai && d.assessment_pct_human) {
+        var labels = ['Reliable, no follow-up', 'Mostly reliable, minor follow-up', 'Discrepancies found'];
+        percHtml += '<table class="photo-table"><tr><th>Overall Assessment</th><th>AI</th><th>Human</th><th>Δ</th></tr>';
+        for (var j = 0; j < 3; j++) {
+            var aV = d.assessment_pct_ai[j] || 0;
+            var hV = d.assessment_pct_human[j] || 0;
+            var df = aV - hV;
+            var dfStr = Math.abs(df) < 0.5 ? '—' : (df > 0 ? '+' : '') + Math.round(df) + ' pp';
+            percHtml += '<tr><td>' + labels[j] + '</td><td class="col-ai">' + fmtPct(aV) + '</td><td class="col-human">' + fmtPct(hV) + '</td><td class="col-delta">' + dfStr + '</td></tr>';
+        }
+        percHtml += '</table>';
+    }
+    document.getElementById('section-perceptions').innerHTML = percHtml;
+
+    // ═══ SECTION 5: Answer Key (always shown) ═══
+    var photoInfo = [
+        { num: 1, displayed: 30, actual: 30, correct: true },
+        { num: 2, displayed: 42, actual: 42, correct: true },
+        { num: 3, displayed: 79, actual: 74, correct: false, error: '+5 overcount' },
+        { num: 4, displayed: 65, actual: 57, correct: false, error: '+8 overcount' },
+    ];
+
+    var ansHtml = '<div class="answer-key"><div class="answer-key-header">📋 Correct Counts — How Did the Group Do?</div><div class="answer-key-body">';
+    for (var k = 0; k < 4; k++) {
+        var pi = photoInfo[k];
+        var tagCls = pi.correct ? 'correct' : 'error';
+        var tagText = pi.correct ? '✓ Correct' : '✗ ' + pi.error;
+        var aiCorr = d.correct_pct_ai ? fmtPct(d.correct_pct_ai[k]) : '–';
+        var huCorr = d.correct_pct_human ? fmtPct(d.correct_pct_human[k]) : '–';
+
+        ansHtml += '<div class="answer-row">' +
+            '<span class="answer-photo">Photo ' + pi.num + '</span>' +
+            '<span class="answer-counts">Displayed: <strong>' + pi.displayed + '</strong> · Actual: <strong>' + pi.actual + '</strong></span>' +
+            '<span class="answer-tag ' + tagCls + '">' + tagText + '</span>' +
+            '<span class="answer-pcts"><span class="answer-pct ai">AI: ' + aiCorr + '</span><span class="answer-pct human">Hu: ' + huCorr + '</span></span>' +
+            '</div>';
+    }
+    ansHtml += '</div></div>';
+
+    ansHtml += '<div class="metric-row">' +
+        '<div class="metric-box ai"><div class="mv">' + fmtNum2(d.mean_total_correct_ai) + '</div><div class="ml">Mean Correct (of 4)<br>AI Condition</div></div>' +
+        '<div class="metric-box human"><div class="mv">' + fmtNum2(d.mean_total_correct_human) + '</div><div class="ml">Mean Correct (of 4)<br>Human Condition</div></div>' +
+        '<div class="metric-box overall"><div class="mv">' + fmtNum2(d.mean_total_correct_all) + '</div><div class="ml">Mean Correct (of 4)<br>Overall</div></div>' +
+        '</div>';
+
+    ansHtml += '<div class="insight-box" style="margin-top:16px"><strong>Discussion:</strong> The counts for Photos 1 and 2 were accurate. Photos 3 and 4 contained deliberate overcounts. Did the source of the count (AI vs. human) affect whether reviewers caught these errors? Consider what this means for professional skepticism and reliance on technology in auditing.</div>';
+
+    document.getElementById('section-answers').innerHTML = ansHtml;
+}
+
+/* ═══ Init: render initial data + start polling ═══ */
+document.addEventListener('DOMContentLoaded', function() {
+    renderResults(latestResults);
+    refreshResults();
+    setInterval(refreshResults, 5000);
+});
+</script>
+{{ endblock }}
